@@ -6,7 +6,7 @@
 RogEE "Category Sorted Entries"
 a plug-in for ExpressionEngine 2
 by Michael Rog
-v0.1
+v0.2
 
 Please e-mail me with questions, feedback, suggestions, bugs, etc.
 >> michael@michaelrog.com
@@ -17,6 +17,7 @@ This plugin is compatible with NSM Addon Updater:
 
 Changelog:
 0.1 - alpha
+0.2 - beta
 
 =====================================================
 
@@ -45,31 +46,11 @@ class Category_sorted_entries {
 	// These variable are all set dynamically
 
 	var $query;
-	var $TYPE;
-	var $entry_id				= '';
-	var	$uri					= '';
-	var $uristr					= '';
 	var $return_data			= '';	 	// Final data
-	var $basepath				= '';
-	var $hit_tracking_id		= FALSE;
-	var	$sql					= FALSE;
-	var $cfields				= array();
-	var $dfields				= array();
-	var $rfields				= array();
-	var $mfields				= array();
-	var $pfields				= array();
-	var $categories				= array();
 	var $catfields				= array();
-	var $channel_name	 		= array();
-	var $channels_array			= array();
-	var $related_entries		= array();
-	var $reverse_related_entries= array();
 	var $reserved_cat_segment 	= '';
 	var $use_category_names		= FALSE;
-	var $dynamic_sql			= FALSE;
-	var $cat_request			= FALSE;
 	var $enable					= array();	// modified by various tags with disable= parameter
-    var $absolute_results		= NULL;		// absolute total results returned by the tag, useful when paginating
 
 	// These are used with the nested category trees
 
@@ -79,23 +60,12 @@ class Category_sorted_entries {
 	var $temp_array				= array();
 	var $category_count			= 0;
 
-	// Pagination variables
-
-	var $paginate				= FALSE;
-	var $field_pagination		= FALSE;
-	var $paginate_data			= '';
-	var $pagination_links		= '';
-	var $page_next				= '';
-	var $page_previous			= '';
-	var $current_page			= 1;
-	var $total_pages			= 1;
-	var $multi_fields			= array();
-	var $display_by				= '';
-	var $total_rows				=  0;
-	var $pager_sql				= '';
-	var $p_limit				= '';
-	var $p_page					= '';
-
+	// These are used in filtering entries
+	
+	var $entries_list	= array();
+	var $filter_by_entries	= FALSE;
+	var $entries_not_list	= array();
+	var $filter_by_entries_not	= FALSE;	
 
 	// SQL Caching
 
@@ -103,7 +73,48 @@ class Category_sorted_entries {
 
 	// Misc. - Class variable usable by extensions
 	var $misc					= FALSE;
+	
+	// These are all unused.
+	
+	// UNUSED: var $TYPE;
+	// UNUSED: var $entry_id				= '';
+	// UNUSED: var	$uri					= '';
+	// UNUSED: var $uristr					= '';
+	// UNUSED: var $basepath				= '';
+	// UNUSED: var $hit_tracking_id		= FALSE;
+	// UNUSED: var	$sql					= FALSE;
+	// UNUSED: var $cfields				= array();
+	// UNUSED: var $dfields				= array();
+	// UNUSED: var $rfields				= array();
+	// UNUSED: var $mfields				= array();
+	// UNUSED: var $pfields				= array();
+	// UNUSED: var $categories				= array();
+	// UNUSED: var $channel_name	 		= array();
+	// UNUSED: var $channels_array			= array();
+	// UNUSED: var $related_entries		= array();
+	// UNUSED: var $reverse_related_entries= array();
+	// UNUSED: var $dynamic_sql			= FALSE;
+	// UNUSED: var $cat_request			= FALSE;
+    // UNUSED: var $absolute_results		= NULL;		// absolute total results returned by the tag, useful when paginating
+ 
+	// Pagination variables (UNUSED)
 
+	// UNUSED: var $paginate				= FALSE;
+	// UNUSED: var $field_pagination		= FALSE;
+	// UNUSED: var $paginate_data			= '';
+	// UNUSED: var $pagination_links		= '';
+	// UNUSED: var $page_next				= '';
+	// UNUSED: var $page_previous			= '';
+	// UNUSED: var $current_page			= 1;
+	// UNUSED: var $total_pages			= 1;
+	// UNUSED: var $multi_fields			= array();
+	// UNUSED: var $display_by				= '';
+	// UNUSED: var $total_rows				=  0;
+	// UNUSED: var $pager_sql				= '';
+	// UNUSED: var $p_limit				= '';
+	// UNUSED: var $p_page					= ''; 
+    
+    
 
 	/** ------------------------------------------------------------------------
 	/**  Constructor
@@ -159,9 +170,12 @@ class Category_sorted_entries {
 		$group_id = $query->row('cat_group') ;
 		$channel_id = $query->row('channel_id') ;
 
-		// If there is a "group_id" specified, removes entires from $cat_group which are not in "group_id"
+		/* */
+		// GROUP_ID param
+		// If there is a "group_id" specified, remove entires from $cat_group which are not in "group_id"
 		// (added by Michael Rog, 2010-01-03, to allow display by specified category groups)
 		// ------------
+		
 		if ($this->EE->TMPL->fetch_param('group_id') !== FALSE)
 		{
 			$group_ids = explode('|', trim($group_id));
@@ -169,33 +183,121 @@ class Category_sorted_entries {
 			if (strncmp($this->EE->TMPL->fetch_param('group_id'), 'not ', 4) == 0)
 			{
 				$not_these_groups = explode('|', trim(substr($this->EE->TMPL->fetch_param('group_id'), 3)));
-				
-				foreach ($group_ids as $k => $v)
-				{
-					if (in_array($v, $not_these_groups))
-					{
-	    				unset($group_ids[$k]);
-					}
-				}
+				$group_ids = array_diff($group_ids, $not_these_groups);
 			}
 			else
 			{
 				$these_groups = explode('|', trim($this->EE->TMPL->fetch_param('group_id')));
-				
-				foreach ($group_ids as $k => $v)
-				{
-					if (!in_array($v, $these_groups))
-					{
-	    				unset($group_ids[$k]);
-					}
-				}
+				$group_ids = array_intersect($group_ids, $these_groups);
 			}
 			
 			$group_id = implode("|", $group_ids);
-			unset($group_ids);
+			unset($group_ids, $not_these_groups, $these_groups);
 		}
+		
+		if ($group_id == "")
+		{
+			return '';
+		}
+		
 		// ------------
-		// end [added by Michael Rog]
+		// end GROUP_ID param
+		/* */
+		
+
+		/* */
+		// ENTRY_ID param
+		// If there is an "entry_id" specified, establish entries list and turn the switch on
+		// (added by Michael Rog, 2010-01-16, to allow filtering by entry id)
+		// ------------
+		
+		if ($this->EE->TMPL->fetch_param('entry_id') !== FALSE)
+		{
+			if (strncmp($this->EE->TMPL->fetch_param('entry_id'), 'not ', 4) == 0)
+			{
+				$this->entries_not_list = explode('|', trim(substr($this->EE->TMPL->fetch_param('entry_id'), 3)));
+				$this->filter_by_entries_not = TRUE;
+			}
+			else
+			{
+				$this->entries_list = explode('|', trim($this->EE->TMPL->fetch_param('entry_id')));
+				$this->filter_by_entries = TRUE;
+			}
+		}
+		
+		// ------------
+		// end ENTRY_ID param
+		/* */
+
+
+		/* */
+		// CATEGORY param
+		// If there is a "category" specified, amend/activate the filter lists accordingly
+		// (added by Michael Rog, 2010-01-16, to allow filtering by categories)
+		// ------------
+		
+		if ($this->EE->TMPL->fetch_param('category') !== FALSE)
+		{
+			
+			// First, get a list of all the entires that DO match the set of categories in the param.
+			
+			$category_sql = "SELECT DISTINCT entry_id FROM exp_category_posts WHERE cat_id IN ";
+			
+			if (strncmp($this->EE->TMPL->fetch_param('category'), 'not ', 4) == 0)
+			{
+				$not_these_categories = explode('|', trim(substr($this->EE->TMPL->fetch_param('category'), 3)));
+				$category_sql .= "('".implode("','", $not_these_categories)."')";
+			}
+			else
+			{
+				$these_categories = explode('|', trim($this->EE->TMPL->fetch_param('category')));
+				$category_sql .= "('".implode("','", $these_categories)."')";
+			}
+			
+			$category_query = $this->EE->db->query($category_sql);
+			
+			$matched_entries = array();
+			
+			if ($category_query->num_rows() > 0)
+			{
+  				foreach ($category_query->result() as $row)
+   				{
+	     			$matched_entries[] = $row->entry_id;
+     			}
+     		}
+     		
+     		// If the param includes a NOT, add these matching entries to the NOT list.
+			
+			if (strncmp($this->EE->TMPL->fetch_param('category'), 'not ', 4) == 0)
+			{
+				$this->entries_not_list = array_merge($matched_entries, $this->entries_not_list);
+				$this->filter_by_entries_not = TRUE;
+			}
+			
+			// Else, the param doesn't include a NOT; these matches act as filters.
+			
+			else
+			{
+				if ($this->filter_by_entries)
+				{
+					$this->entries_list = array_intersect($matched_entries, $this->entries_list);
+				}
+				else
+				{
+					$this->entries_list = array_merge($matched_entries, $this->entries_list);
+				}
+				
+				$this->filter_by_entries = TRUE;
+			}
+			
+			unset($category_sql, $category_query, $matched_entries, $these_categories, $not_these_categories);
+			
+		}
+		
+		// ------------
+		// end CATEGORY param
+		/* */
+		
 
 		$sql = "SELECT exp_category_posts.cat_id, exp_channel_titles.entry_id, exp_channel_titles.title, exp_channel_titles.url_title, exp_channel_titles.entry_date
 				FROM exp_channel_titles, exp_category_posts
@@ -203,25 +305,24 @@ class Category_sorted_entries {
 				AND exp_channel_titles.entry_id = exp_category_posts.entry_id ";
 
 
-		/* SAFE */
-		// added by Michael Rog, 2010-01-03, to allow filtering by entry entry_id
-		// ------------ SAFE
-		if ($this->EE->TMPL->fetch_param('entry_id') !== FALSE)
+		/* */
+		// FILTER BY ENTRY LISTS
+		// Tack on a bit of query to include only the entries that are/aren't in the set we have specied.
+		// (added by Michael Rog, 2010-01-16, to allow filtering by entry entry_id)
+		// (This block takes effect when style="nested" is used.)
+		// ------------
+		if ($this->filter_by_entries_not)
 		{
-			if (strncmp($this->EE->TMPL->fetch_param('entry_id'), 'not ', 4) == 0)
-			{
-				$not_these_entries = explode('|', trim(substr($this->EE->TMPL->fetch_param('entry_id'), 3)));
-				$sql .= "AND exp_channel_titles.entry_id NOT IN ('".implode("','", $not_these_entries)."') ";
-			}
-			else
-			{
-				$these_entries = explode('|', trim($this->EE->TMPL->fetch_param('entry_id')));
-				$sql .= "AND exp_channel_titles.entry_id IN ('".implode("','", $these_entries)."') ";
-			}
+			$sql .= "AND exp_channel_titles.entry_id NOT IN ('".implode("','", $this->entries_not_list)."') ";
+		}
+		if ($this->filter_by_entries)
+		{
+			$sql .= "AND exp_channel_titles.entry_id IN ('".implode("','", $this->entries_list)."') ";
 		}
 		// ------------
-		// end [added by Michael Rog]
+		// end filter block
 		/* */
+
 				
 		$timestamp = ($this->EE->TMPL->cache_timestamp != '') ? $this->EE->localize->set_gmt($this->EE->TMPL->cache_timestamp) : $this->EE->localize->now;
 
@@ -368,6 +469,22 @@ class Category_sorted_entries {
 
 					}
 
+					/* */
+					// {entry_id}, {url_title}
+					// An extra replace statement to allow display of entry_id and url_title variables.
+					// (added by Michael Rog, 2010-01-16)
+					// (This block takes effect when style="nested" is used.)
+					// ------------
+					
+					$chunk = str_replace(array(LD.'entry_id'.RD, LD.'url_title'.RD),
+										 array($row['entry_id'],$row['url_title']),
+										 $chunk);
+										 
+					// ------------
+					// end {entry_id}, {url_title} replacement
+					/* */	
+
+
 					$channel_array[$i.'_'.$row['cat_id']] = str_replace(LD.'title'.RD, $row['title'], $chunk);
 					$i++;
 				}
@@ -450,26 +567,24 @@ class Category_sorted_entries {
 			
 			$sql .= " WHERE c.group_id IN ('".str_replace('|', "','", $this->EE->db->escape_str($group_id))."')
 						AND c.group_id NOT IN ('WOOHOO-LINE-413') ";
-
-			/* (style="linear") */
-			// added by Michael Rog, 2010-01-03, to allow filtering by entry entry_id
+			
+			/* */
+			// FILTER BY ENTRY LISTS
+			// Tack on a bit of query to include only the entries that are/aren't in the set we have specied.
+			// (added by Michael Rog, 2010-01-16, to allow filtering by entry entry_id)
+			// (This block takes effect when style="linear" is used.)
 			// ------------
-			if ($this->EE->TMPL->fetch_param('entry_id') !== FALSE)
+			if ($this->filter_by_entries_not)
 			{
-				if (strncmp($this->EE->TMPL->fetch_param('entry_id'), 'not ', 4) == 0)
-				{
-					$not_these = explode('|', trim(substr($this->EE->TMPL->fetch_param('entry_id'), 3)));
-					$sql .= "AND exp_category_posts.entry_id NOT IN ('".implode("','", $not_these)."') ";
-				}
-				else
-				{
-					$these = explode('|', trim($this->EE->TMPL->fetch_param('entry_id')));
-					$sql .= "AND exp_category_posts.entry_id IN ('".implode("','", $these)."') ";
-				}
+				$sql .= "AND exp_category_posts.entry_id NOT IN ('".implode("','", $this->entries_not_list)."') ";
+			}
+			if ($this->filter_by_entries)
+			{
+				$sql .= "AND exp_category_posts.entry_id IN ('".implode("','", $this->entries_list)."') ";
 			}
 			// ------------
-			// end [added by Michael Rog]
-			/* */
+			// end filter block
+			/* */			
 			
 
 			if ($this->EE->TMPL->fetch_param('show_empty') == 'no')
@@ -598,6 +713,21 @@ class Category_sorted_entries {
 							$chunk = str_replace(array(LD.'title'.RD, LD.'category_name'.RD),
 												 array($trow['title'],$row['cat_name']),
 												 $tit_chunk);
+												 
+							/* */
+							// {entry_id}, {url_title}
+							// An extra replace statement to allow display of entry_id and url_title variables.
+							// (added by Michael Rog, 2010-01-16)
+							// (This block takes effect when style="linear" is used.)
+							// ------------
+							
+							$chunk = str_replace(array(LD.'entry_id'.RD, LD.'url_title'.RD),
+												 array($trow['entry_id'],$trow['url_title']),
+												 $chunk);
+												 
+							// ------------
+							// end {entry_id}, {url_title} replacement
+							/* */	
 
 							foreach($t_path as $tkey => $tval)
 							{
@@ -730,26 +860,27 @@ class Category_sorted_entries {
 						AND group_id NOT IN ('WOOHOO-LINE-669') ";
 
 			$sql .= "AND exp_category_posts.cat_id IS NOT NULL ";
-
-			/* (style="nested") */			
-			// added by Michael Rog, 2010-01-03, to allow filtering by entry entry_id
+			
+			
+			/* */
+			// FILTER BY ENTRY LISTS
+			// Tack on a bit of query to include only the entries that are/aren't in the set we have specied.
+			// (added by Michael Rog, 2010-01-16, to allow filtering by entry entry_id)
+			// (This block takes effect when style="nested" is used AND show_empty="no".)
 			// ------------
-			if ($this->EE->TMPL->fetch_param('entry_id') !== FALSE)
+			if ($this->filter_by_entries_not)
 			{
-				if (strncmp($this->EE->TMPL->fetch_param('entry_id'), 'not ', 4) == 0)
-				{
-					$not_these_entries = explode('|', trim(substr($this->EE->TMPL->fetch_param('entry_id'), 3)));
-					$sql .= "AND exp_channel_titles.entry_id NOT IN ('".implode("','", $not_these_entries)."') ";
-				}
-				else
-				{
-					$these_entries = explode('|', trim($this->EE->TMPL->fetch_param('entry_id')));
-					$sql .= "AND exp_channel_titles.entry_id IN ('".implode("','", $these_entries)."') ";
-				}
+				$sql .= "AND exp_channel_titles.entry_id NOT IN ('".implode("','", $this->entries_not_list)."') ";
+			}
+			if ($this->filter_by_entries)
+			{
+				$sql .= "AND exp_channel_titles.entry_id IN ('".implode("','", $this->entries_list)."') ";
 			}
 			// ------------
-			// end [added by Michael Rog]
+			// end filter block
 			/* */
+			
+						
 
 			if ($channel_id != '' && $strict_empty == 'yes')
 			{
