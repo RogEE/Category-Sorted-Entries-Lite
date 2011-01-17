@@ -1,4 +1,4 @@
 <?php
-    $config['name'] = 'RogEE Category Archive on Steroids';
-    $config['version'] = '0.2';
-    // $config['nsm_addon_updater']['versions_xml'] = 'http://bitbucket.org/rogee/category-archive-on-steroids/raw/tip/versions.xml';
+    $config['name'] = 'RogEE Category Sorted Entries';
+    $config['version'] = '1.0';
+    $config['nsm_addon_updater']['versions_xml'] = 'http://bitbucket.org/rogee/category_sorted_entries/raw/tip/versions.xml';
