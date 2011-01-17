@@ -6,7 +6,7 @@
 RogEE "Category Sorted Entries"
 a plug-in for ExpressionEngine 2
 by Michael Rog
-v0.2
+v1.0
 
 Please e-mail me with questions, feedback, suggestions, bugs, etc.
 >> michael@michaelrog.com
@@ -16,8 +16,9 @@ This plugin is compatible with NSM Addon Updater:
 >> http://github.com/newism/nsm.addon_updater.ee_addon
 
 Changelog:
-0.1 - alpha
-0.2 - beta
+0.1 - alpha: filtering by entry_id and display by group_id
+0.2 - beta: improved filtering by entry_id, added filtering by category, more variables
+1.0 - release: cleaned up the file, added BitBucket details
 
 =====================================================
 
@@ -27,10 +28,10 @@ if (! defined('BASEPATH') && ! defined('EXT')) exit('No direct script access all
 
 $plugin_info = array(
 						'pi_name'			=> 'RogEE Category Sorted Entries',
-						'pi_version'		=> '0.1',
+						'pi_version'		=> '1.0',
 						'pi_author'			=> 'Michael Rog',
 						'pi_author_url'		=> 'http://michaelrog.com/ee',
-						'pi_description'	=> 'Like the built-in EE Category Archive, but with an entry_id parameter for funsies.',
+						'pi_description'	=> 'Like the built-in EE Category Archive, but way mo\' better (with additional variables and parameters for added control.)',
 						'pi_usage'			=> Category_sorted_entries::usage()
 					);
 
@@ -74,47 +75,6 @@ class Category_sorted_entries {
 	// Misc. - Class variable usable by extensions
 	var $misc					= FALSE;
 	
-	// These are all unused.
-	
-	// UNUSED: var $TYPE;
-	// UNUSED: var $entry_id				= '';
-	// UNUSED: var	$uri					= '';
-	// UNUSED: var $uristr					= '';
-	// UNUSED: var $basepath				= '';
-	// UNUSED: var $hit_tracking_id		= FALSE;
-	// UNUSED: var	$sql					= FALSE;
-	// UNUSED: var $cfields				= array();
-	// UNUSED: var $dfields				= array();
-	// UNUSED: var $rfields				= array();
-	// UNUSED: var $mfields				= array();
-	// UNUSED: var $pfields				= array();
-	// UNUSED: var $categories				= array();
-	// UNUSED: var $channel_name	 		= array();
-	// UNUSED: var $channels_array			= array();
-	// UNUSED: var $related_entries		= array();
-	// UNUSED: var $reverse_related_entries= array();
-	// UNUSED: var $dynamic_sql			= FALSE;
-	// UNUSED: var $cat_request			= FALSE;
-    // UNUSED: var $absolute_results		= NULL;		// absolute total results returned by the tag, useful when paginating
- 
-	// Pagination variables (UNUSED)
-
-	// UNUSED: var $paginate				= FALSE;
-	// UNUSED: var $field_pagination		= FALSE;
-	// UNUSED: var $paginate_data			= '';
-	// UNUSED: var $pagination_links		= '';
-	// UNUSED: var $page_next				= '';
-	// UNUSED: var $page_previous			= '';
-	// UNUSED: var $current_page			= 1;
-	// UNUSED: var $total_pages			= 1;
-	// UNUSED: var $multi_fields			= array();
-	// UNUSED: var $display_by				= '';
-	// UNUSED: var $total_rows				=  0;
-	// UNUSED: var $pager_sql				= '';
-	// UNUSED: var $p_limit				= '';
-	// UNUSED: var $p_page					= ''; 
-    
-    
 
 	/** ------------------------------------------------------------------------
 	/**  Constructor
@@ -173,7 +133,7 @@ class Category_sorted_entries {
 		/* */
 		// GROUP_ID param
 		// If there is a "group_id" specified, remove entires from $cat_group which are not in "group_id"
-		// (added by Michael Rog, 2010-01-03, to allow display by specified category groups)
+		// (This is to cause entries to be displayed by the specified category groups.)
 		// ------------
 		
 		if ($this->EE->TMPL->fetch_param('group_id') !== FALSE)
@@ -207,8 +167,8 @@ class Category_sorted_entries {
 
 		/* */
 		// ENTRY_ID param
-		// If there is an "entry_id" specified, establish entries list and turn the switch on
-		// (added by Michael Rog, 2010-01-16, to allow filtering by entry id)
+		// If there is an "entry_id" specified, establish entries list and turn the switch on.
+		// (This is Step 1 in filtering the entries by entry_id.)
 		// ------------
 		
 		if ($this->EE->TMPL->fetch_param('entry_id') !== FALSE)
@@ -232,8 +192,7 @@ class Category_sorted_entries {
 
 		/* */
 		// CATEGORY param
-		// If there is a "category" specified, amend/activate the filter lists accordingly
-		// (added by Michael Rog, 2010-01-16, to allow filtering by categories)
+		// If there is a "category" specified, amend/activate the filter lists accordingly.
 		// ------------
 		
 		if ($this->EE->TMPL->fetch_param('category') !== FALSE)
@@ -308,7 +267,6 @@ class Category_sorted_entries {
 		/* */
 		// FILTER BY ENTRY LISTS
 		// Tack on a bit of query to include only the entries that are/aren't in the set we have specied.
-		// (added by Michael Rog, 2010-01-16, to allow filtering by entry entry_id)
 		// (This block takes effect when style="nested" is used.)
 		// ------------
 		if ($this->filter_by_entries_not)
@@ -472,7 +430,6 @@ class Category_sorted_entries {
 					/* */
 					// {entry_id}, {url_title}
 					// An extra replace statement to allow display of entry_id and url_title variables.
-					// (added by Michael Rog, 2010-01-16)
 					// (This block takes effect when style="nested" is used.)
 					// ------------
 					
@@ -571,7 +528,6 @@ class Category_sorted_entries {
 			/* */
 			// FILTER BY ENTRY LISTS
 			// Tack on a bit of query to include only the entries that are/aren't in the set we have specied.
-			// (added by Michael Rog, 2010-01-16, to allow filtering by entry entry_id)
 			// (This block takes effect when style="linear" is used.)
 			// ------------
 			if ($this->filter_by_entries_not)
@@ -717,7 +673,6 @@ class Category_sorted_entries {
 							/* */
 							// {entry_id}, {url_title}
 							// An extra replace statement to allow display of entry_id and url_title variables.
-							// (added by Michael Rog, 2010-01-16)
 							// (This block takes effect when style="linear" is used.)
 							// ------------
 							
@@ -865,7 +820,6 @@ class Category_sorted_entries {
 			/* */
 			// FILTER BY ENTRY LISTS
 			// Tack on a bit of query to include only the entries that are/aren't in the set we have specied.
-			// (added by Michael Rog, 2010-01-16, to allow filtering by entry entry_id)
 			// (This block takes effect when style="nested" is used AND show_empty="no".)
 			// ------------
 			if ($this->filter_by_entries_not)
@@ -1468,7 +1422,24 @@ class Category_sorted_entries {
 		ob_start(); 
 		?>
 	
-		Woohoo!
+		This plugin behaves like the standard Category Archive Tag:
+		
+		http://expressionengine.com/user_guide/modules/channel/category_archive.html
+		
+		---------------
+		
+		BUT, you also have some additional parameters to control the output:
+		
+		group_id: Only categories in these groups are displayed.
+		entry_id: Only entries matching these IDs are returned.
+		category: Only entries assigned to these categories are returned.
+		
+		{entry_id} - The entry ID of each entry (in the {entry_titles} section)
+		{url_title} - The URL title of each entry (in the {entry_titles} section)
+		
+		See http://michaelrog.com/ee/category-sorted-entries for detailed documentation.
+		
+		---------------
 		
 		This plugin is compatible with NSM Addon Updater:
 		
