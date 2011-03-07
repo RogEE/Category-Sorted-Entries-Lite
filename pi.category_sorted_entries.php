@@ -6,7 +6,7 @@
 RogEE "Category Sorted Entries"
 a plug-in for ExpressionEngine 2
 by Michael Rog
-v1.0
+v1.0.0
 
 Please e-mail me with questions, feedback, suggestions, bugs, etc.
 >> michael@michaelrog.com
@@ -16,9 +16,9 @@ This plugin is compatible with NSM Addon Updater:
 >> http://github.com/newism/nsm.addon_updater.ee_addon
 
 Changelog:
-0.1 - alpha: filtering by entry_id and display by group_id
-0.2 - beta: improved filtering by entry_id, added filtering by category, more variables
-1.0 - release: cleaned up the file, added BitBucket details
+0.0.1 - alpha: filtering by entry_id and display by group_id
+0.0.2 - beta: improved filtering by entry_id, added filtering by category, more variables
+1.0.0 - release: cleaned up the file, added BitBucket details
 
 =====================================================
 
@@ -28,7 +28,7 @@ if (! defined('BASEPATH') && ! defined('EXT')) exit('No direct script access all
 
 $plugin_info = array(
 						'pi_name'			=> 'RogEE Category Sorted Entries',
-						'pi_version'		=> '1.0',
+						'pi_version'		=> '1.0.0',
 						'pi_author'			=> 'Michael Rog',
 						'pi_author_url'		=> 'http://michaelrog.com/ee',
 						'pi_description'	=> 'Like the built-in EE Category Archive, but way mo\' better (with additional variables and parameters for added control.)',
