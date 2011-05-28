@@ -32,14 +32,14 @@ $plugin_info = array(
 						'pi_author'			=> 'Michael Rog',
 						'pi_author_url'		=> 'http://michaelrog.com/ee',
 						'pi_description'	=> 'Like the built-in EE Category Archive, but way mo\' better (with additional variables and parameters for added control.)',
-						'pi_usage'			=> Category_sorted_entries::usage()
+						'pi_usage'			=> category_sorted_entries_lite::usage()
 					);
 
 /** ------------------------------------------------------------------------
-/**  Category_sorted_entries
+/**  category_sorted_entries_lite
 /** ------------------------------------------------------------------------*/
 
-class Category_sorted_entries {
+class Category_sorted_entries_lite {
 
 
 	var $limit	= '100';	// Default maximum query results if not specified.
@@ -80,7 +80,7 @@ class Category_sorted_entries {
 	/**  Constructor
 	/** ------------------------------------------------------------------------*/
 
-	function Category_sorted_entries($str='')
+	function category_sorted_entries_lite($str='')
 	{
 
 		// Make a local reference to the ExpressionEngine super object
@@ -104,7 +104,7 @@ class Category_sorted_entries {
 
 		$this->return_data = $this->category_archive();
 
-	} // END Category_sorted_entries() constructor
+	} // END category_sorted_entries_lite() constructor
 
 
 	/** ------------------------------------------------------------------------
@@ -1454,7 +1454,7 @@ class Category_sorted_entries {
 		
 	} // END usage()
 
-} // END Category_sorted_entries class
+} // END category_sorted_entries_lite class
 
-/* End of file pi.category_sorted_entries.php */ 
-/* Location: ./system/expressionengine/third_party/category_sorted_entries/pi.category_sorted_entries.php */
+/* End of file pi.category_sorted_entries_lite.php */ 
+/* Location: ./system/expressionengine/third_party/category_sorted_entries_lite/pi.category_sorted_entries_lite.php */
